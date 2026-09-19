@@ -11,88 +11,67 @@ package paqueteria.util;
 public class ListaEnlazada<T> {    
     
     private Nodo<T> cabeza;
-    private int length;
-    
-    public ListaEnlazada(){
-        this.cabeza = null;
-        length = 0;
-    }
-    
-    public Nodo<T> getCabeza(){
-        return cabeza;
-    }
-    
-    public void insertarInicio(T dato){
+    private int tamanio;
+
+    public void agregar(T dato) {
         Nodo<T> nuevo = new Nodo<>(dato);
-        nuevo.setSiguiente(cabeza);
-        cabeza = nuevo;
-        length++;
-    }
-    
-    public void insertarFinal(T dato){
-        Nodo<T> nuevo = new Nodo<>(dato);
-        if(cabeza == null){
+        if (cabeza == null) {
             cabeza = nuevo;
         } else {
-            Nodo<T> puntero = cabeza;
-            while(puntero.getSiguiente() != null){
-                puntero = puntero.getSiguiente();
+            Nodo<T> actual = cabeza;
+            while (actual.getSiguiente() != null) {
+                actual = actual.getSiguiente();
             }
-            puntero.setSiguiente(nuevo);
+            actual.setSiguiente(nuevo);
         }
-        length++;
+        tamanio++;
     }
-    
-    public boolean contiene(T dato) {
+
+    public boolean eliminar(T dato) {
+        Nodo<T> anterior = null;
         Nodo<T> actual = cabeza;
         while (actual != null) {
-            if (actual.getDato().equals(dato)){
+            if (actual.getDato().equals(dato)) {
+                if (anterior == null) {
+                    cabeza = actual.getSiguiente();
+                } else {
+                    anterior.setSiguiente(actual.getSiguiente());
+                }
+                tamanio--;
                 return true;
             }
+            anterior = actual;
             actual = actual.getSiguiente();
         }
         return false;
     }
-    
+
+    public T eliminarPrimero() {
+        if (cabeza == null) {
+            return null;
+        }
+        T dato = cabeza.getDato();
+        cabeza = cabeza.getSiguiente();
+        tamanio--;
+        return dato;
+    }
+
     public int buscar(T dato) {
+        int posicion = 0;
         Nodo<T> actual = cabeza;
-        int pos = 0;
         while (actual != null) {
-            if (actual.getDato().equals(dato)){
-                return pos;
+            if (actual.getDato().equals(dato)) {
+                return posicion;
             }
+            posicion++;
             actual = actual.getSiguiente();
-            pos +=1;
         }
         return -1;
     }
-    
-    public boolean eliminar(T dato) {
-        if (cabeza == null){
-            return false;
-        }
- 
-        if (cabeza.getDato().equals(dato)) {
-            cabeza = cabeza.getSiguiente();
-            length--;
-            return true;
-        }
- 
-        Nodo<T> actual = cabeza;
-        while (actual.getSiguiente() != null) {
-            if (actual.getSiguiente().getDato().equals(dato)) {
-                actual.setSiguiente(actual.getSiguiente().getSiguiente());
-                length--;
-                return true;
-            }
-            actual = actual.getSiguiente();
-        }
-        return false;
-    }
-    
-    public T obtenerEn(int indice) {
-        if (indice < 0 || indice >= length) {
-            throw new IndexOutOfBoundsException("Índice fuera de rango: " + indice);
+
+    public T obtener(int indice) {
+        if (indice < 0 || indice >= tamanio) {
+            throw new IndexOutOfBoundsException("Índice inválido: " + indice);
         }
         Nodo<T> actual = cabeza;
         for (int i = 0; i < indice; i++) {
@@ -100,12 +79,42 @@ public class ListaEnlazada<T> {
         }
         return actual.getDato();
     }
- 
-    public int length() {
-        return length;
+
+    public int tamanio() {
+        return tamanio;
     }
- 
+
     public boolean estaVacia() {
-        return length == 0;
+        return tamanio == 0;
+    }
+
+    public void limpiar() {
+        cabeza = null;
+        tamanio = 0;
+    }
+
+    public ListaEnlazada<T> copiar() {
+        ListaEnlazada<T> copia = new ListaEnlazada<>();
+        Nodo<T> actual = cabeza;
+        while (actual != null) {
+            copia.agregar(actual.getDato());
+            actual = actual.getSiguiente();
+        }
+        return copia;
+    }
+
+    @Override
+    public String toString() {
+        String texto = "[";
+        Nodo<T> actual = cabeza;
+        while (actual != null) {
+            texto = texto + actual.getDato();
+            if (actual.getSiguiente() != null) {
+                texto = texto + ", ";
+            }
+            actual = actual.getSiguiente();
+        }
+        return texto + "]";
     }
 }
+

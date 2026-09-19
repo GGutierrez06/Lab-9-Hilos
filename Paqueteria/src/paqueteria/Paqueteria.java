@@ -4,6 +4,8 @@
  */
 package paqueteria;
 
+import javax.swing.SwingUtilities;
+
 /**
  *
  * @author gabri
@@ -15,6 +17,8 @@ public class Paqueteria {
      */
     public static void main(String[] args) {
         // TODO code application logic here
+        
+        SwingUtilities.invokeLater(() -> new VentanaPrincipal().setVisible(true));
     }
     
 }
