@@ -5,7 +5,8 @@
 package paqueteria;
 
 import paqueteria.base.*;
-import paqueteria.logica.Constantes;
+import paqueteria.logica.*;
+import paqueteria.logica.ControlSimulacion.Estado;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -20,6 +21,7 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import javax.swing.*;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
+import javax.swing.text.BadLocationException;
 
 /**
  *
@@ -29,6 +31,7 @@ public class VentanaPrincipal extends JFrame {
 
     private static final int MAX_LINEAS_LOG = 600;
 
+    private CentroLogistico centro;
 
     private final JButton btnIniciar   = new JButton("INICIAR");
     private final JButton btnPausar    = new JButton("PAUSAR");
@@ -37,8 +40,8 @@ public class VentanaPrincipal extends JFrame {
     private final JButton btnReiniciar = new JButton("REINICIAR");
     private final JLabel lblEstado     = new JLabel("Estado: -");
 
-    private final PanelZona pRecepcion = new PanelZona("Recepción", Constantes.CAP_RECEPCION, 3, null);
-    private final PanelZona pAlmacen = new PanelZona("Almacén", Constantes.CAP_ALMACEN, 5, null);
+    private final PanelZona pRecepcion = new PanelZona("Recepcion", Constantes.CAP_RECEPCION, 3, null);
+    private final PanelZona pAlmacen = new PanelZona("Almacen", Constantes.CAP_ALMACEN, 5, null);
     private final JLabel[] lblClasificadores = new JLabel[Constantes.NUM_CLASIFICADORES];
     private final PanelZona pClasificacion;
     private final JLabel[] lblEmpaquetadores = new JLabel[Constantes.NUM_EMPAQUETADORES];
@@ -51,16 +54,17 @@ public class VentanaPrincipal extends JFrame {
         new PanelEstadisticas(Constantes.CAPACIDADES_REPARTIDORES.length);
     private final JTextArea log = new JTextArea();
 
+    private final Timer refresco;
 
     public VentanaPrincipal() {
-        super("Sistema de Paquetería - Centro Logístico");
+        super("Paquete Logistics");
 
         JPanel trabajadoresClas = new JPanel(new GridLayout(0, 1, 0, 1));
         for (int i = 0; i < lblClasificadores.length; i++) {
             lblClasificadores[i] = new JLabel();
             trabajadoresClas.add(lblClasificadores[i]);
         }
-        pClasificacion = new PanelZona("Clasificación", Constantes.CAP_CLASIFICACION, 5, trabajadoresClas);
+        pClasificacion = new PanelZona("Clasificacion", Constantes.CAP_CLASIFICACION, 5, trabajadoresClas);
 
         JPanel trabajadoresEmp = new JPanel(new GridLayout(1, 0, 20, 0));
         for (int i = 0; i < lblEmpaquetadores.length; i++) {
@@ -74,19 +78,24 @@ public class VentanaPrincipal extends JFrame {
         }
 
         construirInterfaz();
-        
+        configurarEventos();
+
+        nuevoCentro(false);
+
+        refresco = new Timer(200, e -> actualizar());
+        refresco.start();
+
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1400, 900);
         setLocationRelativeTo(null);
         setExtendedState(MAXIMIZED_BOTH);
     }
 
-
     private void construirInterfaz() {
         setLayout(new BorderLayout(6, 6));
         ((JPanel) getContentPane()).setBorder(BorderFactory.createEmptyBorder(6, 8, 8, 8));
 
-        JLabel titulo = new JLabel("SISTEMA DE PAQUETERÍA - CENTRO LOGÍSTICO", SwingConstants.CENTER);
+        JLabel titulo = new JLabel("PAQUETE LOGISTICS", SwingConstants.CENTER);
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 20f));
 
         JPanel controles = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
@@ -164,5 +173,82 @@ public class VentanaPrincipal extends JFrame {
         return c;
     }
 
+    private void configurarEventos() {
+        btnIniciar.addActionListener(e -> { centro.iniciar(); actualizarBotones(); });
+        btnPausar.addActionListener(e -> { centro.pausar(); actualizarBotones(); });
+        btnReanudar.addActionListener(e -> { centro.reanudar(); actualizarBotones(); });
+        btnDetener.addActionListener(e -> { centro.detener(); actualizarBotones(); });
+        btnReiniciar.addActionListener(e -> nuevoCentro(true));
+    }
+
+    private void nuevoCentro(boolean iniciarYa) {
+        if (centro != null) {
+            centro.detener();
+        }
+        log.setText("");
+        centro = new CentroLogistico();
+        if (iniciarYa) {
+            centro.iniciar();
+        }
+        actualizar();
+    }
+
+    private void agregarLog(String linea) {
+        log.append(linea + "\n");
+        if (log.getLineCount() > MAX_LINEAS_LOG) {
+            try {
+                log.replaceRange("", 0, log.getLineEndOffset(199));
+            } catch (BadLocationException e) {
+                System.out.println("No se pudo recortar el registro");
+            }
+        }
+        log.setCaretPosition(log.getDocument().getLength());
+    }
+
+    private void actualizar() {
+        pRecepcion.actualizar(centro.recepcion);
+        pAlmacen.actualizar(centro.almacen);
+        pClasificacion.actualizar(centro.clasificacion);
+        pEmpaquetado.actualizar(centro.empaquetado);
+        pExpedicion.actualizar(centro.expedicion);
+
+        String linea = centro.registro.siguienteLinea();
+        while (linea != null) {
+            agregarLog(linea);
+            linea = centro.registro.siguienteLinea();
+        }
+
+        for (int i = 0; i < lblClasificadores.length; i++) {
+            ClasificadorThread c = centro.getClasificadores().obtener(i);
+            lblClasificadores[i].setText("Clasificador " + c.getNumero() + "  ->  " + texto(c.getActual()));
+        }
+        for (int i = 0; i < lblEmpaquetadores.length; i++) {
+            EmpaquetadorThread e = centro.getEmpaquetadores().obtener(i);
+            lblEmpaquetadores[i].setText("Empaquetador " + e.getNumero() + "  ->  " + texto(e.getActual()));
+        }
+        for (int i = 0; i < tarjetas.length; i++) {
+            RepartidorThread r = centro.getRepartidores().obtener(i);
+            tarjetas[i].actualizar(r);
+        }
+        lblEnReparto.setText("Paquetes en reparto ahora: " + centro.reparto.tamanio()
+            + "   |   Entregados: " + centro.entregados.tamanio()
+            + "   |   Devueltos: " + centro.devueltos.tamanio());
+
+        pEstadisticas.actualizar(centro);
+        actualizarBotones();
+    }
+
+    private static String texto(Paquete p) {
+        return p == null ? "(libre)" : p.getCodigo() + " [" + p.getPrioridad() + ", " + p.getPeso() + " kg]";
+    }
+
+    private void actualizarBotones() {
+        Estado e = centro.control.getEstado();
+        btnIniciar.setEnabled(e == Estado.LISTA);
+        btnPausar.setEnabled(e == Estado.EJECUTANDO);
+        btnReanudar.setEnabled(e == Estado.PAUSADA);
+        btnDetener.setEnabled(e == Estado.EJECUTANDO || e == Estado.PAUSADA);
+        lblEstado.setText("Estado: " + e);
+    }
 }
 

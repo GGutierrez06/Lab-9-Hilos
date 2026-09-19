@@ -5,6 +5,7 @@
 package paqueteria;
 
 import paqueteria.base.Prioridad;
+import paqueteria.logica.*;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -24,7 +25,7 @@ import java.awt.GridLayout;
 
 class PanelEstadisticas extends JPanel {
 
-    private final JLabel generados = valor();
+     private final JLabel generados = valor();
     private final JLabel entregados = valor();
     private final JLabel devueltos = valor();
     private final JLabel enProceso = valor();
@@ -38,7 +39,7 @@ class PanelEstadisticas extends JPanel {
             BorderFactory.createLineBorder(new Color(0x90, 0x9C, 0xA8)),
             BorderFactory.createEmptyBorder(8, 10, 8, 10)));
 
-        JLabel titulo = new JLabel("ESTADÍSTICAS", SwingConstants.CENTER);
+        JLabel titulo = new JLabel("ESTADISTICAS", SwingConstants.CENTER);
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 14f));
         titulo.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
         titulo.setAlignmentX(CENTER_ALIGNMENT);
@@ -105,4 +106,24 @@ class PanelEstadisticas extends JPanel {
         panel.add(valor);
     }
 
+    void actualizar(CentroLogistico centro) {
+        Estadisticas e = centro.estadisticas;
+        int gen = e.getGenerados();
+        int ent = e.getEntregados();
+        int dev = e.getDevueltos();
+        int pend = centro.recepcion.tamanio();
+        int proceso = Math.max(0, gen - ent - dev - pend);
+
+        generados.setText(String.valueOf(gen));
+        entregados.setText(String.valueOf(ent));
+        devueltos.setText(String.valueOf(dev));
+        enProceso.setText(String.valueOf(proceso));
+        pendientes.setText(String.valueOf(pend));
+        promedio.setText(String.format("%.1f s", e.getTiempoPromedioSegundos()));
+
+        for (int i = 0; i < porRepartidor.length && i < centro.getRepartidores().tamanio(); i++) {
+            RepartidorThread r = centro.getRepartidores().obtener(i);
+            porRepartidor[i].setText(String.valueOf(r.getEntregados()));
+        }
+    }
 }

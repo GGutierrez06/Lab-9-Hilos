@@ -6,6 +6,7 @@ package paqueteria;
 
 import paqueteria.util.ListaEnlazada;
 import paqueteria.base.Paquete;
+import paqueteria.logica.ZonaLogistica;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,7 +21,6 @@ class PanelZona extends JPanel {
     private final JProgressBar barra = new JProgressBar();
     private final PanelFichas fichas;
 
-    
     PanelZona(String titulo, int capacidad, int columnas, JComponent extra) {
         super(new BorderLayout(4, 4));
         setBorder(BorderFactory.createCompoundBorder(
@@ -46,6 +46,17 @@ class PanelZona extends JPanel {
         JPanel centro = new JPanel(new BorderLayout());
         centro.add(fichas, BorderLayout.NORTH);
         add(centro, BorderLayout.CENTER);
+    }
+
+    void actualizar(ZonaLogistica zona) {
+        ListaEnlazada<Paquete> foto = zona.instantanea();
+        int n = foto.tamanio();
+        int cap = zona.getCapacidad();
+        barra.setMaximum(cap);
+        barra.setValue(n);
+        barra.setString(n + " / " + cap + " paquetes");
+        barra.setForeground(Colores.ocupacion(n, cap));
+        fichas.mostrar(foto, 0);
     }
 
 }

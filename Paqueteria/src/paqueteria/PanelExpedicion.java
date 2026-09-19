@@ -6,6 +6,8 @@ package paqueteria;
 
 import paqueteria.base.Paquete;
 import paqueteria.base.Rutas;
+import paqueteria.util.ListaEnlazada;
+import paqueteria.logica.*;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -64,7 +66,7 @@ class PanelExpedicion extends JPanel {
         }
         add(rutas, BorderLayout.CENTER);
     }
-/*
+
     void actualizar(ZonaLogistica zona) {
         ListaEnlazada<Paquete> foto = zona.instantanea();
         int n = foto.tamanio();
@@ -85,5 +87,5 @@ class PanelExpedicion extends JPanel {
             titulos[i].setText("Ruta " + ruta + "  (" + cuenta + ")");
             columnas[i].mostrar(foto, ruta);
         }
-    }*/
+    }
 }
